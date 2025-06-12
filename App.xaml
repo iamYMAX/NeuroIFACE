@@ -4,6 +4,6 @@
              xmlns:local="clr-namespace:NeuroIFACE"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
+        <local:HexToSolidColorBrushConverter x:Key="HexToBrushConverter"/>
     </Application.Resources>
 </Application>

@@ -51,6 +51,17 @@ namespace NeuroIFACE
             }
         }
 
+        private void ColorButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.Button clickedButton)
+            {
+                if (clickedButton.Tag is string colorHex)
+                {
+                    _viewModel.MainWindowBackgroundColor = colorHex;
+                }
+            }
+        }
+
         private void EnglishTextBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
             if (EnglishTextBox.IsFocused && !_isTranslatingRu) // Only translate if this box has focus and the other isn't currently translating to this one

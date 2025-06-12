@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks; // For Task
 using System.Net; // For WebUtility
+using System.Windows.Media;
 
 namespace NeuroIFACE
 {
@@ -29,14 +30,20 @@ namespace NeuroIFACE
         private bool _isTranslatingRu = false; // Flags to prevent re-entrant translation calls
         private bool _isTranslatingEn = false;
         private const int DebounceMilliseconds = 500;
+        private bool _isUpdatingSlidersProgrammatically = false;
 
         public SettingsWindow(MainViewModel viewModel)
         {
             InitializeComponent();
             _viewModel = viewModel;
-            DataContext = _viewModel;
+            DataContext = _viewModel; // ViewModel is now set
+
+            // Initialize translation timers
             _debounceTimerRu = new Timer(DebounceTimerRuCallback, null, Timeout.Infinite, Timeout.Infinite);
             _debounceTimerEn = new Timer(DebounceTimerEnCallback, null, Timeout.Infinite, Timeout.Infinite);
+
+            // Initialize sliders from ViewModel's current background color
+            UpdateSlidersFromViewModelColor();
         }
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
@@ -51,16 +58,7 @@ namespace NeuroIFACE
             }
         }
 
-        private void ColorButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is System.Windows.Controls.Button clickedButton)
-            {
-                if (clickedButton.Tag is string colorHex)
-                {
-                    _viewModel.MainWindowBackgroundColor = colorHex;
-                }
-            }
-        }
+        // ColorButton_Click removed
 
         private void EnglishTextBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
@@ -184,6 +182,78 @@ namespace NeuroIFACE
                 new XElement("Ru", russian),
                 new XElement("En", english)));
             doc.Save("Data.xml");
+        }
+
+        private void RgbSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (_isUpdatingSlidersProgrammatically || _viewModel == null || RedSlider == null || GreenSlider == null || BlueSlider == null || ColorPreviewRectangle == null)
+            {
+                return; // Or wait until all are initialized if called during setup
+            }
+
+            byte r = (byte)RedSlider.Value;
+            byte g = (byte)GreenSlider.Value;
+            byte b = (byte)BlueSlider.Value;
+
+            Color selectedColor = Color.FromArgb(255, r, g, b);
+            ColorPreviewRectangle.Fill = new SolidColorBrush(selectedColor);
+
+            string hexColor = $"#FF{r:X2}{g:X2}{b:X2}";
+            _viewModel.MainWindowBackgroundColor = hexColor;
+        }
+
+        private void UpdateSlidersFromViewModelColor()
+        {
+            if (_viewModel == null || RedSlider == null || GreenSlider == null || BlueSlider == null || ColorPreviewRectangle == null) return;
+
+            _isUpdatingSlidersProgrammatically = true;
+            try
+            {
+                string hexColor = _viewModel.MainWindowBackgroundColor;
+                if (!string.IsNullOrEmpty(hexColor) && hexColor.StartsWith("#"))
+                {
+                    if (hexColor.Length == 9) // #AARRGGBB
+                    {
+                        // We ignore the ViewModel's Alpha, sliders control RGB, window opacity controls overall alpha.
+                        byte r = byte.Parse(hexColor.Substring(3, 2), System.Globalization.NumberStyles.HexNumber);
+                        byte g = byte.Parse(hexColor.Substring(5, 2), System.Globalization.NumberStyles.HexNumber);
+                        byte b = byte.Parse(hexColor.Substring(7, 2), System.Globalization.NumberStyles.HexNumber);
+
+                        RedSlider.Value = r;
+                        GreenSlider.Value = g;
+                        BlueSlider.Value = b;
+
+                        Color previewColor = Color.FromArgb(255, r, g, b);
+                        ColorPreviewRectangle.Fill = new SolidColorBrush(previewColor);
+                    }
+                    else if (hexColor.Length == 7) // #RRGGBB
+                    {
+                        byte r = byte.Parse(hexColor.Substring(1, 2), System.Globalization.NumberStyles.HexNumber);
+                        byte g = byte.Parse(hexColor.Substring(3, 2), System.Globalization.NumberStyles.HexNumber);
+                        byte b = byte.Parse(hexColor.Substring(5, 2), System.Globalization.NumberStyles.HexNumber);
+
+                        RedSlider.Value = r;
+                        GreenSlider.Value = g;
+                        BlueSlider.Value = b;
+
+                        Color previewColor = Color.FromArgb(255, r, g, b);
+                        ColorPreviewRectangle.Fill = new SolidColorBrush(previewColor);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error parsing ViewModel color for sliders: {ex.Message}");
+                // Optionally set sliders to a default, e.g., black
+                RedSlider.Value = 0;
+                GreenSlider.Value = 0;
+                BlueSlider.Value = 0;
+                ColorPreviewRectangle.Fill = new SolidColorBrush(Color.FromArgb(255,0,0,0));
+            }
+            finally
+            {
+                _isUpdatingSlidersProgrammatically = false;
+            }
         }
     }
 }

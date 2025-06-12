@@ -58,5 +58,16 @@ namespace NeuroIFACE
             SetSettingsWindowPosition();
 
         }
+
+        private void Window_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            // Prevent the double-click from causing undesired actions, like closing the window.
+            // If the action is specifically from the left mouse button,
+            // which might be initiating a DragMove or other interaction.
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                e.Handled = true;
+            }
+        }
     }
 }

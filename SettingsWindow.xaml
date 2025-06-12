@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Настройки" Height="244" Width="314"  WindowStyle="None" ResizeMode="NoResize"  AllowsTransparency="True" Background="Transparent" Topmost="True" SizeToContent="WidthAndHeight" Foreground="White">
     <Border Background="#B3000000" CornerRadius="25"  BorderThickness="2"  >
-        <Grid Opacity="0.6" >
+        <Grid >
             <!-- Кнопка закрытия -->
             <Button Width="50" Height="50" Background="#FF080808" BorderBrush="Transparent" 
                 HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,180,250,0" Click="CloseButton_Click">

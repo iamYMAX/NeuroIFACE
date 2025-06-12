@@ -58,9 +58,9 @@
            HorizontalAlignment="Center"  VerticalAlignment="Top" Margin="0,94,0,0"
            FontSize="16" Foreground="White"/>
             <TextBox x:Name="RussianTextBox" Height="30" Margin="26,10,25,0" 
-                 VerticalAlignment="Top" ToolTip="Введите 1е значение" Background="{x:Null}" Foreground="#FFFDFBFB" FontSize="18"/>
+                 VerticalAlignment="Top" ToolTip="Введите 1е значение" Background="{x:Null}" Foreground="#FFFDFBFB" FontSize="18" TextChanged="RussianTextBox_TextChanged"/>
             <TextBox x:Name="EnglishTextBox" Height="30" Margin="26,55,25,0" 
-                 VerticalAlignment="Top" ToolTip="Введите 2е Значение" Background="{x:Null}" Foreground="White" FontSize="16"/>
+                 VerticalAlignment="Top" ToolTip="Введите 2е Значение" Background="{x:Null}" Foreground="White" FontSize="16" TextChanged="EnglishTextBox_TextChanged"/>
             <Button Content="Добавить" Background="#FF080808" Foreground="White" FontSize="16" BorderThickness="2" BorderBrush="Transparent" Click="AddPhrase_Click" Margin="219,137,19,30">
                 <Button.Template>
                     <ControlTemplate TargetType="Button">

@@ -18,6 +18,30 @@ namespace NeuroIFACE
             
 
         }
+
+        private void MainBorder_MouseEnter(object sender, MouseEventArgs e)
+        {
+            MinimizeButton.Visibility = Visibility.Visible;
+            CloseButton.Visibility = Visibility.Visible;
+        }
+
+        private void MainBorder_MouseLeave(object sender, MouseEventArgs e)
+        {
+            // Add a small delay or check if the mouse is over the buttons themselves
+            // For simplicity, this example hides them immediately.
+            // A more robust solution might involve a timer or checking if e.OriginalSource is one of the buttons.
+            if (!MinimizeButton.IsMouseOver && !CloseButton.IsMouseOver)
+            {
+                MinimizeButton.Visibility = Visibility.Collapsed;
+                CloseButton.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void MinimizeButton_Click(object sender, RoutedEventArgs e)
+        {
+            this.WindowState = WindowState.Minimized;
+        }
+
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             this.Close(); // Закрытие окна

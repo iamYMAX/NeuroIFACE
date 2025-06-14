@@ -64,32 +64,11 @@
                     </StackPanel>
 
                     <!-- Button to Open Phrase Manager -->
-                    <Button x:Name="ManagePhrasesButton" Content="Управление списком фраз" Background="#FF080808" Foreground="White" FontSize="16" BorderThickness="2" BorderBrush="Transparent" Click="ManagePhrasesButton_Click" Padding="10,5" Margin="0,0,0,10">
-                        <Button.RenderTransform>
-                            <ScaleTransform ScaleX="1" ScaleY="1" />
-                        </Button.RenderTransform>
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Grid>
-                                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="15">
-                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-                                </Grid>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Trigger.EnterActions><BeginStoryboard><Storyboard>
-                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1.05" Duration="0:0:0.1" />
-                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1.05" Duration="0:0:0.1" />
-                                        </Storyboard></BeginStoryboard></Trigger.EnterActions>
-                                        <Trigger.ExitActions><BeginStoryboard><Storyboard>
-                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.1" />
-                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.1" />
-                                        </Storyboard></BeginStoryboard></Trigger.ExitActions>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
+                    <Button x:Name="ManagePhrasesButton"
+                            Content="Управление списком фраз"
+                            Click="ManagePhrasesButton_Click"
+                            Margin="0,0,0,10"
+                            Style="{StaticResource ModernButtonStyle}"/>
 
                     <!-- Group 5: Actions -->
                     <Grid Margin="0,10,0,0">
@@ -99,32 +78,10 @@
                             <ColumnDefinition Width="Auto"/> <!-- Close Button -->
                         </Grid.ColumnDefinitions>
 
-                        <Button Content="Добавить фразу" Grid.Column="0" Background="#FF080808" Foreground="White" FontSize="16" BorderThickness="2" BorderBrush="Transparent" Click="AddPhrase_Click" Padding="10,5">
-                            <Button.RenderTransform>
-                                <ScaleTransform ScaleX="1" ScaleY="1" />
-                            </Button.RenderTransform>
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Grid>
-                                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="15">
-                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-                                    </Grid>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Trigger.EnterActions><BeginStoryboard><Storyboard>
-                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1.05" Duration="0:0:0.1" />
-                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1.05" Duration="0:0:0.1" />
-                                            </Storyboard></BeginStoryboard></Trigger.EnterActions>
-                                            <Trigger.ExitActions><BeginStoryboard><Storyboard>
-                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.1" />
-                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.1" />
-                                            </Storyboard></BeginStoryboard></Trigger.ExitActions>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
+                        <Button Content="Добавить фразу"
+                                Grid.Column="0"
+                                Click="AddPhrase_Click"
+                                Style="{StaticResource ModernButtonStyle}"/>
 
                         <Button Grid.Column="2" Width="30" Height="30" Background="#FF080808" Click="CloseButton_Click" ToolTip="Закрыть настройки" HorizontalAlignment="Right">
                             <TextBlock Text="✕" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White"/>

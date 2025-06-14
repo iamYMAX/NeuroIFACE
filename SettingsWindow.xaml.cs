@@ -160,9 +160,9 @@ namespace NeuroIFACE
 
         private void AddPhrase_Click(object sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Debug.WriteLine($"SettingsWindow.AddPhrase_Click: Adding phrase Ru='{russianPhrase}', En='{englishPhrase}'");
             string russianPhrase = RussianTextBox.Text;
             string englishPhrase = EnglishTextBox.Text;
+            System.Diagnostics.Debug.WriteLine($"SettingsWindow.AddPhrase_Click: Adding phrase Ru='{russianPhrase}', En='{englishPhrase}'");
 
             if (!string.IsNullOrEmpty(russianPhrase) && !string.IsNullOrEmpty(englishPhrase))
             {

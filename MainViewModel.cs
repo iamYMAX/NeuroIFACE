@@ -311,25 +311,30 @@ namespace NeuroIFACE
                 settingsElement.SetElementValue("MainWindowOpacity", _mainWindowOpacity.ToString(CultureInfo.InvariantCulture));
                 settingsElement.SetElementValue("FontSize", _fontSize.ToString(CultureInfo.InvariantCulture));
                 settingsElement.SetElementValue("SliderValue", _sliderValue.ToString(CultureInfo.InvariantCulture));
-
-                System.Diagnostics.Debug.WriteLine("MainViewModel.SaveAppSettings: Ensuring Settings element exists and updating values.");
-                XElement settingsElement = appDataRoot.Element("Settings");
-                if (settingsElement == null)
-                {
-                    settingsElement = new XElement("Settings");
-                }
-                settingsElement.SetElementValue("MainWindowBackgroundColor", _mainWindowBackgroundColor);
-                settingsElement.SetElementValue("MainWindowOpacity", _mainWindowOpacity.ToString(CultureInfo.InvariantCulture));
-                settingsElement.SetElementValue("FontSize", _fontSize.ToString(CultureInfo.InvariantCulture));
-                settingsElement.SetElementValue("SliderValue", _sliderValue.ToString(CultureInfo.InvariantCulture));
+                // The debug line below was part of the duplicated block, it's removed as the logic is now consolidated.
+                // System.Diagnostics.Debug.WriteLine("MainViewModel.SaveAppSettings: Ensuring Settings element exists and updating values.");
+                // The duplicated block that caused CS0128 is removed.
 
                 System.Diagnostics.Debug.WriteLine("MainViewModel.SaveAppSettings: Enforcing <Phrases> then <Settings> order.");
-                phrasesCurrent.Remove();
-                XElement currentSettingsIfAny = appDataRoot.Element("Settings"); // Re-fetch in case it was just created by SetElementValue on a detached element
-                if(currentSettingsIfAny != null) currentSettingsIfAny.Remove();
+                phrasesCurrent.Remove(); // Remove phrases to re-add in order
 
-                appDataRoot.Add(phrasesCurrent);
-                appDataRoot.Add(settingsElement);
+                // settingsElement here is the one that was either found or created and then populated with values.
+                // If it was part of appDataRoot, it needs to be removed before re-adding to ensure order.
+                // If it was created new and not yet added, then it doesn't need removal.
+                // The simplest way to ensure it's correctly ordered is to remove if it exists, then add.
+                XElement existingSettingsInTree = appDataRoot.Element("Settings");
+                if (existingSettingsInTree != null)
+                {
+                    existingSettingsInTree.Remove();
+                }
+                // Now, appDataRoot does not contain "Settings".
+                // We add the settingsElement that has all the correct values.
+                // If settingsElement was initially null and created, it was not added to appDataRoot yet by the first block.
+                // If settingsElement was found via appDataRoot.Element("Settings"), it is the same as existingSettingsInTree.
+                // The important part is that 'settingsElement' variable holds the element with all values set.
+
+                appDataRoot.Add(phrasesCurrent); // Add Phrases first
+                appDataRoot.Add(settingsElement); // Add Settings (which has all values) second
 
                 doc.Save(_filePath);
                 System.Diagnostics.Debug.WriteLine($"MainViewModel.SaveAppSettings: Settings saved to {_filePath}.");

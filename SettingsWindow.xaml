@@ -9,21 +9,25 @@
 
                     <Expander Header="Ввод и перевод фраз" Margin="0,0,0,10" IsExpanded="True">
                         <StackPanel Margin="5">
-                            <TextBlock Text="Тексты для перевода:" Margin="0,0,0,5" FontSize="14" FontWeight="SemiBold"/>
+                            <TextBlock Text="Тексты для перевода:" Margin="0,0,0,5" FontSize="14" FontWeight="SemiBold" Foreground="White"/>
+
+                            <TextBlock Text="Значение 1 (напр. Русский):" Foreground="White" Margin="0,5,0,2" FontSize="12"/>
                             <TextBox x:Name="RussianTextBox" Height="30" ToolTip="Введите 1е значение" Background="{x:Null}" Foreground="#FFFDFBFB" FontSize="18" TextChanged="RussianTextBox_TextChanged" Margin="0,0,0,5"/>
+
+                            <TextBlock Text="Значение 2 (напр. Английский):" Foreground="White" Margin="0,5,0,2" FontSize="12"/>
                             <TextBox x:Name="EnglishTextBox" Height="30" ToolTip="Введите 2е Значение" Background="{x:Null}" Foreground="White" FontSize="16" TextChanged="EnglishTextBox_TextChanged" Margin="0,0,0,10"/>
                         </StackPanel>
                     </Expander>
 
                     <Expander Header="Отображение фраз" Margin="0,0,0,10" IsExpanded="True">
                         <StackPanel Margin="5">
-                            <TextBlock Text="Частота обновления фразы (Навязчивость):" Margin="0,0,0,5" FontSize="14" FontWeight="SemiBold"/>
+                            <TextBlock Text="Частота обновления фразы (Навязчивость):" Margin="0,0,0,5" FontSize="14" FontWeight="SemiBold" Foreground="White"/>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                                 <Slider Minimum="1" Maximum="25" Value="{Binding SliderValue, Mode=TwoWay}" Width="150" VerticalAlignment="Center"/>
                                 <TextBlock Text="{Binding SliderValue, StringFormat={}{0:F0}}" FontSize="16" Foreground="White" Margin="10,0,0,0" VerticalAlignment="Center"/>
                             </StackPanel>
 
-                            <TextBlock Text="Размер шрифта фраз:" Margin="0,0,0,5" FontSize="14" FontWeight="SemiBold"/>
+                            <TextBlock Text="Размер шрифта фраз:" Margin="0,0,0,5" FontSize="14" FontWeight="SemiBold" Foreground="White"/>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                                 <Slider Minimum="8" Maximum="24" Value="{Binding FontSize, Mode=TwoWay}" Width="150" VerticalAlignment="Center"/>
                                 <TextBlock Text="{Binding FontSize, Mode=TwoWay, StringFormat={}{0:F0}}" FontSize="16" Foreground="White" Margin="10,0,0,0" VerticalAlignment="Center"/>
@@ -34,36 +38,36 @@
                     <Expander Header="Внешний вид главного окна" Margin="0,0,0,10" IsExpanded="True">
                         <StackPanel Margin="5">
                             <!-- This TextBlock seems redundant if the Expander has a similar header, but kept for consistency with original structure -->
-                            <TextBlock Text="Вид главного окна:" Margin="0,0,0,5" FontSize="14" FontWeight="SemiBold" Visibility="Collapsed"/>
+                            <TextBlock Text="Вид главного окна:" Margin="0,0,0,5" FontSize="14" FontWeight="SemiBold" Visibility="Collapsed" Foreground="White"/>
 
-                            <TextBlock Text="Цвет фона гл. окна:" Foreground="White" Margin="0,0,0,5"/>
+                            <TextBlock Text="Цвет фона гл. окна:" Foreground="White" Margin="0,0,0,5" FontSize="14"/>
                             <StackPanel Orientation="Vertical" Margin="0,0,0,10">
                                 <!-- Red Slider -->
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
-                                    <TextBlock Text="R:" Foreground="White" Width="20" VerticalAlignment="Center"/>
+                                    <TextBlock Text="R:" Foreground="White" Width="20" VerticalAlignment="Center" FontSize="12"/>
                                     <Slider x:Name="RedSlider" Minimum="0" Maximum="255" Value="34" Width="150" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="RgbSlider_ValueChanged" VerticalAlignment="Center"/>
                                     <TextBlock Text="{Binding ElementName=RedSlider, Path=Value, StringFormat={}{0:F0}}" Foreground="White" Width="30" Margin="5,0,0,0" VerticalAlignment="Center"/>
                                 </StackPanel>
                                 <!-- Green Slider -->
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
-                                    <TextBlock Text="G:" Foreground="White" Width="20" VerticalAlignment="Center"/>
+                                    <TextBlock Text="G:" Foreground="White" Width="20" VerticalAlignment="Center" FontSize="12"/>
                                     <Slider x:Name="GreenSlider" Minimum="0" Maximum="255" Value="34" Width="150" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="RgbSlider_ValueChanged" VerticalAlignment="Center"/>
                                     <TextBlock Text="{Binding ElementName=GreenSlider, Path=Value, StringFormat={}{0:F0}}" Foreground="White" Width="30" Margin="5,0,0,0" VerticalAlignment="Center"/>
                                 </StackPanel>
                                 <!-- Blue Slider -->
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                                    <TextBlock Text="B:" Foreground="White" Width="20" VerticalAlignment="Center"/>
+                                    <TextBlock Text="B:" Foreground="White" Width="20" VerticalAlignment="Center" FontSize="12"/>
                                     <Slider x:Name="BlueSlider" Minimum="0" Maximum="255" Value="34" Width="150" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="RgbSlider_ValueChanged" VerticalAlignment="Center"/>
                                     <TextBlock Text="{Binding ElementName=BlueSlider, Path=Value, StringFormat={}{0:F0}}" Foreground="White" Width="30" Margin="5,0,0,0" VerticalAlignment="Center"/>
                                 </StackPanel>
                                 <!-- Color Preview -->
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="Предпросмотр:" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    <TextBlock Text="Предпросмотр:" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0" FontSize="12"/>
                                     <Rectangle x:Name="ColorPreviewRectangle" Width="50" Height="30" Stroke="Gray" StrokeThickness="1" Fill="#FF222222"/>
                                 </StackPanel>
                             </StackPanel>
 
-                            <TextBlock Text="Прозрачность гл. окна:" Foreground="White" Margin="0,0,0,5"/>
+                            <TextBlock Text="Прозрачность гл. окна:" Foreground="White" Margin="0,0,0,5" FontSize="14"/>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                                 <Slider x:Name="OpacitySlider" Minimum="0.1" Maximum="1.0" Value="{Binding MainWindowOpacity, Mode=TwoWay}"
                                         SmallChange="0.05" TickFrequency="0.1" Width="150" VerticalAlignment="Center"/>

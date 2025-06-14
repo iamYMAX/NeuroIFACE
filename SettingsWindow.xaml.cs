@@ -257,11 +257,15 @@ namespace NeuroIFACE
             byte g = (byte)GreenSlider.Value;
             byte b = (byte)BlueSlider.Value;
 
-            Color selectedColor = Color.FromArgb(255, r, g, b);
-            ColorPreviewRectangle.Fill = new SolidColorBrush(selectedColor);
+            // Get Alpha from the ViewModel's MainWindowOpacity (which is our source of truth for opacity)
+            byte alpha = (byte)Math.Round(_viewModel.MainWindowOpacity * 255);
 
-            string hexColor = $"#FF{r:X2}{g:X2}{b:X2}";
-            _viewModel.MainWindowBackgroundColor = hexColor;
+            Color selectedColorWithAlpha = Color.FromArgb(alpha, r, g, b); // Use actual alpha for preview
+            ColorPreviewRectangle.Fill = new SolidColorBrush(selectedColorWithAlpha);
+
+            // Update ViewModel's MainWindowBackgroundColor with the new ARGB value
+            string hexColorWithAlpha = $"#{alpha:X2}{r:X2}{g:X2}{b:X2}";
+            _viewModel.MainWindowBackgroundColor = hexColorWithAlpha;
         }
 
         private void ManagePhrasesButton_Click(object sender, RoutedEventArgs e)
@@ -286,46 +290,54 @@ namespace NeuroIFACE
             _isUpdatingSlidersProgrammatically = true;
             try
             {
-                string hexColor = _viewModel.MainWindowBackgroundColor;
+                string hexColor = _viewModel.MainWindowBackgroundColor; // This is now ARGB
+                byte a = 255, r = 0, g = 0, b = 0; // Default to opaque black
+
                 if (!string.IsNullOrEmpty(hexColor) && hexColor.StartsWith("#"))
                 {
                     if (hexColor.Length == 9) // #AARRGGBB
                     {
-                        // We ignore the ViewModel's Alpha, sliders control RGB, window opacity controls overall alpha.
-                        byte r = byte.Parse(hexColor.Substring(3, 2), System.Globalization.NumberStyles.HexNumber);
-                        byte g = byte.Parse(hexColor.Substring(5, 2), System.Globalization.NumberStyles.HexNumber);
-                        byte b = byte.Parse(hexColor.Substring(7, 2), System.Globalization.NumberStyles.HexNumber);
-
-                        RedSlider.Value = r;
-                        GreenSlider.Value = g;
-                        BlueSlider.Value = b;
-
-                        Color previewColor = Color.FromArgb(255, r, g, b);
-                        ColorPreviewRectangle.Fill = new SolidColorBrush(previewColor);
+                        a = byte.Parse(hexColor.Substring(1, 2), System.Globalization.NumberStyles.HexNumber);
+                        r = byte.Parse(hexColor.Substring(3, 2), System.Globalization.NumberStyles.HexNumber);
+                        g = byte.Parse(hexColor.Substring(5, 2), System.Globalization.NumberStyles.HexNumber);
+                        b = byte.Parse(hexColor.Substring(7, 2), System.Globalization.NumberStyles.HexNumber);
                     }
-                    else if (hexColor.Length == 7) // #RRGGBB
+                    else if (hexColor.Length == 7) // #RRGGBB (Assume full opacity)
                     {
-                        byte r = byte.Parse(hexColor.Substring(1, 2), System.Globalization.NumberStyles.HexNumber);
-                        byte g = byte.Parse(hexColor.Substring(3, 2), System.Globalization.NumberStyles.HexNumber);
-                        byte b = byte.Parse(hexColor.Substring(5, 2), System.Globalization.NumberStyles.HexNumber);
-
-                        RedSlider.Value = r;
-                        GreenSlider.Value = g;
-                        BlueSlider.Value = b;
-
-                        Color previewColor = Color.FromArgb(255, r, g, b);
-                        ColorPreviewRectangle.Fill = new SolidColorBrush(previewColor);
+                        a = 255; // Default alpha to full if not specified
+                        r = byte.Parse(hexColor.Substring(1, 2), System.Globalization.NumberStyles.HexNumber);
+                        g = byte.Parse(hexColor.Substring(3, 2), System.Globalization.NumberStyles.HexNumber);
+                        b = byte.Parse(hexColor.Substring(5, 2), System.Globalization.NumberStyles.HexNumber);
                     }
+                     // Update ViewModel's Opacity property based on the Alpha from the color string
+                    _viewModel.MainWindowOpacity = a / 255.0; // This will also update OpacitySlider via binding
                 }
+                 else // Handle case where color string is invalid, use ViewModel's current opacity
+                {
+                    a = (byte)Math.Round(_viewModel.MainWindowOpacity * 255);
+                }
+
+
+                RedSlider.Value = r;
+                GreenSlider.Value = g;
+                BlueSlider.Value = b;
+                // OpacitySlider is already bound to _viewModel.MainWindowOpacity, which should be updated by the logic above if hexColor contained alpha.
+                // If hexColor did not contain alpha (e.g. #RRGGBB), then _viewModel.MainWindowOpacity (from initial load or last slider change) is the source of truth.
+                // The call to _viewModel.MainWindowOpacity = a / 255.0 ensures OpacitySlider syncs with the alpha from an ARGB color string.
+
+                Color previewColor = Color.FromArgb(a, r, g, b);
+                ColorPreviewRectangle.Fill = new SolidColorBrush(previewColor);
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error parsing ViewModel color for sliders: {ex.Message}");
-                // Optionally set sliders to a default, e.g., black
+                // Optionally set sliders to a default
                 RedSlider.Value = 0;
                 GreenSlider.Value = 0;
                 BlueSlider.Value = 0;
-                ColorPreviewRectangle.Fill = new SolidColorBrush(Color.FromArgb(255,0,0,0));
+                OpacitySlider.Value = _viewModel.MainWindowOpacity; // Reset to current ViewModel value
+                byte currentAlpha = (byte)Math.Round(_viewModel.MainWindowOpacity * 255);
+                ColorPreviewRectangle.Fill = new SolidColorBrush(Color.FromArgb(currentAlpha, 0,0,0));
             }
             finally
             {

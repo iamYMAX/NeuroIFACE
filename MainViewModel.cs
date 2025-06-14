@@ -40,9 +40,10 @@ namespace NeuroIFACE
             {
                 if (_mainWindowOpacity != value)
                 {
-                    _mainWindowOpacity = value;
+                    _mainWindowOpacity = Math.Max(0.0, Math.Min(1.0, value)); // Ensure value is [0,1]
                     OnPropertyChanged();
-                    SaveAppSettings();
+                    UpdateBackgroundColorAlpha(); // Update the background color's alpha
+                    // SaveAppSettings() will be called by MainWindowBackgroundColor's setter if it changes
                 }
             }
         }
@@ -92,9 +93,48 @@ namespace NeuroIFACE
             _timer.Tick += (s, e) => UpdatePhrase();
 
             LoadAppSettings(); // Load settings, or save current defaults.
+            UpdateBackgroundColorAlpha(); // Initial sync after loading
 
             UpdateTimerInterval(); // Call after SliderValue is potentially loaded.
             System.Diagnostics.Debug.WriteLine("MainViewModel: Constructor finished.");
+        }
+
+        private void UpdateBackgroundColorAlpha()
+        {
+            System.Diagnostics.Debug.WriteLine("MainViewModel.UpdateBackgroundColorAlpha: Updating background color alpha from MainWindowOpacity.");
+            string currentBg = MainWindowBackgroundColor;
+            byte newAlphaByte = (byte)Math.Round(_mainWindowOpacity * 255);
+
+            if (string.IsNullOrEmpty(currentBg) || !currentBg.StartsWith("#"))
+            {
+                // Default to black if current background is invalid or not a hex string
+                currentBg = "#FF000000";
+            }
+
+            string newBg;
+            if (currentBg.Length == 9) // #AARRGGBB
+            {
+                newBg = $"#{newAlphaByte:X2}{currentBg.Substring(3, 6)}";
+            }
+            else if (currentBg.Length == 7) // #RRGGBB
+            {
+                newBg = $"#{newAlphaByte:X2}{currentBg.Substring(1, 6)}";
+            }
+            else // Unrecognized hex format, default to newAlpha + Black
+            {
+                System.Diagnostics.Debug.WriteLine($"MainViewModel.UpdateBackgroundColorAlpha: Unrecognized background color format '{currentBg}'. Defaulting to black with new alpha.");
+                newBg = $"#{newAlphaByte:X2}000000";
+            }
+
+            if (MainWindowBackgroundColor != newBg)
+            {
+                MainWindowBackgroundColor = newBg; // This will trigger OnPropertyChanged and SaveAppSettings for MainWindowBackgroundColor
+                System.Diagnostics.Debug.WriteLine($"MainViewModel.UpdateBackgroundColorAlpha: MainWindowBackgroundColor updated to {newBg}.");
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"MainViewModel.UpdateBackgroundColorAlpha: No change needed for MainWindowBackgroundColor ({newBg}).");
+            }
         }
 
         private void LoadAppSettings()

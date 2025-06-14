@@ -86,6 +86,7 @@ namespace NeuroIFACE
 
         public MainViewModel()
         {
+            System.Diagnostics.Debug.WriteLine("MainViewModel: Constructor called.");
             _phraseModel = new RandomPhraseModel();
             _timer = new DispatcherTimer();
             _timer.Tick += (s, e) => UpdatePhrase();
@@ -93,37 +94,65 @@ namespace NeuroIFACE
             LoadAppSettings(); // Load settings, or save current defaults.
 
             UpdateTimerInterval(); // Call after SliderValue is potentially loaded.
+            System.Diagnostics.Debug.WriteLine("MainViewModel: Constructor finished.");
         }
 
         private void LoadAppSettings()
         {
+            System.Diagnostics.Debug.WriteLine("MainViewModel.LoadAppSettings: Attempting to load application settings...");
             try
             {
                 if (!File.Exists(_filePath))
                 {
-                    SaveAppSettings();
+                    System.Diagnostics.Debug.WriteLine($"MainViewModel.LoadAppSettings: {_filePath} not found. Calling SaveAppSettings() to create defaults.");
+                    SaveAppSettings(); // This will create Data.xml with default settings and empty/default phrases
+                    System.Diagnostics.Debug.WriteLine("MainViewModel.LoadAppSettings: SaveAppSettings() called, returning.");
                     return;
                 }
 
                 XDocument doc = XDocument.Load(_filePath);
-                if (doc.Root == null || doc.Root.Name != "AppData")
+                XElement appDataRoot = doc.Root;
+
+                // If Data.xml is empty or doesn't have a root, or root is not AppData
+                if (appDataRoot == null || appDataRoot.Name != "AppData")
                 {
-                    XElement phrasesElement = null;
-                    if (doc.Root != null && doc.Root.Name == "Phrases")
+                    XElement phrasesToPreserve = null;
+                    if (appDataRoot != null && appDataRoot.Name == "Phrases")
                     {
-                        phrasesElement = new XElement(doc.Root);
+                        // Old format: root is <Phrases>
+                        System.Diagnostics.Debug.WriteLine("MainViewModel.LoadAppSettings: Old format detected (Phrases as root). Migrating to AppData structure.");
+                        phrasesToPreserve = new XElement(appDataRoot); // Clone the old <Phrases> root
                     }
-                    SaveAppSettings(phrasesElement);
+                    else if (appDataRoot != null && appDataRoot.Name == "AppData" && appDataRoot.Element("Phrases") != null)
+                    {
+                        // This case should ideally not be hit if AppData is root, but as a safeguard
+                        System.Diagnostics.Debug.WriteLine("MainViewModel.LoadAppSettings: AppData root found, but will ensure Phrases are preserved if SaveAppSettings is called.");
+                        phrasesToPreserve = new XElement(appDataRoot.Element("Phrases"));
+                    }
+                    else if (appDataRoot != null)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"MainViewModel.LoadAppSettings: Unrecognized root element '{appDataRoot.Name}'. Proceeding to SaveAppSettings.");
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"MainViewModel.LoadAppSettings: File {_filePath} seems to be empty or corrupted. Proceeding to SaveAppSettings.");
+                    }
+
+                    System.Diagnostics.Debug.WriteLine("MainViewModel.LoadAppSettings: Calling SaveAppSettings due to incorrect/old XML structure.");
+                    SaveAppSettings(phrasesToPreserve);
                     return;
                 }
 
-                XElement settingsElement = doc.Root.Element("Settings");
+                System.Diagnostics.Debug.WriteLine("MainViewModel.LoadAppSettings: AppData root found.");
+                XElement settingsElement = appDataRoot.Element("Settings");
                 if (settingsElement == null)
                 {
-                    SaveAppSettings(doc.Root.Element("Phrases"));
+                    System.Diagnostics.Debug.WriteLine("MainViewModel.LoadAppSettings: <Settings> element not found under <AppData>. Calling SaveAppSettings to create it.");
+                    SaveAppSettings(appDataRoot.Element("Phrases")); // Preserve existing phrases if any
                     return;
                 }
 
+                System.Diagnostics.Debug.WriteLine("MainViewModel.LoadAppSettings: <Settings> element found. Loading values.");
                 string bgColor = settingsElement.Element("MainWindowBackgroundColor")?.Value;
                 if (!string.IsNullOrEmpty(bgColor)) _mainWindowBackgroundColor = bgColor;
 
@@ -149,98 +178,167 @@ namespace NeuroIFACE
                 OnPropertyChanged(nameof(MainWindowOpacity));
                 OnPropertyChanged(nameof(FontSize));
                 OnPropertyChanged(nameof(SliderValue));
+                System.Diagnostics.Debug.WriteLine("MainViewModel.LoadAppSettings: Settings loaded and properties updated.");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error loading settings: {ex.Message}. Applying and saving defaults.");
-                SaveAppSettings();
+                System.Diagnostics.Debug.WriteLine($"MainViewModel.LoadAppSettings: Exception: {ex.Message}. Applying and saving defaults.");
+                // In case of any exception during loading (e.g., file corruption),
+                // try to save current (default or last known good) settings,
+                // preserving phrases if possible by trying to read them one last time,
+                // or just save settings with empty phrases.
+                XElement phrases = null;
+                try
+                {
+                    if(File.Exists(_filePath))
+                    {
+                        System.Diagnostics.Debug.WriteLine($"MainViewModel.LoadAppSettings (Exception Handler): Attempting to read {_filePath} to preserve phrases.");
+                        XDocument tempDoc = XDocument.Load(_filePath); // Potential re-throw if file is severely corrupted.
+                        if (tempDoc.Root != null && tempDoc.Root.Name == "AppData" && tempDoc.Root.Element("Phrases") != null)
+                        {
+                            phrases = new XElement(tempDoc.Root.Element("Phrases"));
+                            System.Diagnostics.Debug.WriteLine("MainViewModel.LoadAppSettings (Exception Handler): Preserved Phrases from AppData/Phrases.");
+                        }
+                        else if (tempDoc.Root != null && tempDoc.Root.Name == "Phrases")
+                        {
+                            phrases = new XElement(tempDoc.Root);
+                            System.Diagnostics.Debug.WriteLine("MainViewModel.LoadAppSettings (Exception Handler): Preserved Phrases from old format (root is Phrases).");
+                        }
+                    }
+                }
+                catch (Exception e) // Catch exceptions specifically from trying to preserve phrases
+                {
+                    System.Diagnostics.Debug.WriteLine($"MainViewModel.LoadAppSettings (Exception Handler): Exception while trying to preserve phrases: {e.Message}");
+                }
+                SaveAppSettings(phrases); // Save defaults, potentially with preserved phrases
             }
+            System.Diagnostics.Debug.WriteLine("MainViewModel.LoadAppSettings: Finished.");
         }
 
-        private void SaveAppSettings(XElement existingPhrasesElementToPreserve = null)
+        private void SaveAppSettings(XElement phrasesElementToPreserve = null)
         {
+            System.Diagnostics.Debug.WriteLine("MainViewModel.SaveAppSettings: Attempting to save application settings...");
+            if (phrasesElementToPreserve != null)
+            {
+                System.Diagnostics.Debug.WriteLine("MainViewModel.SaveAppSettings: A phrasesElementToPreserve was provided.");
+            }
             try
             {
                 XDocument doc;
                 XElement appDataRoot;
 
+                // Try to load existing document to preserve unknown elements if any (though not strictly required by current spec)
                 if (File.Exists(_filePath))
                 {
                     try
                     {
+                        System.Diagnostics.Debug.WriteLine($"MainViewModel.SaveAppSettings: Loading existing {_filePath} to preserve structure/other data.");
                         doc = XDocument.Load(_filePath);
                         appDataRoot = doc.Root;
                         if (appDataRoot == null || appDataRoot.Name != "AppData")
                         {
-                            if (existingPhrasesElementToPreserve == null && appDataRoot != null && appDataRoot.Name == "Phrases")
+                            System.Diagnostics.Debug.WriteLine($"MainViewModel.SaveAppSettings: Existing root is not AppData (or null). Recreating AppData root. Old root was: {appDataRoot?.Name}");
+                            XElement oldPhrases = phrasesElementToPreserve;
+                            if (appDataRoot != null && appDataRoot.Name == "Phrases" && phrasesElementToPreserve == null)
                             {
-                                existingPhrasesElementToPreserve = new XElement(appDataRoot); // Preserve old <Phrases> root
+                                System.Diagnostics.Debug.WriteLine("MainViewModel.SaveAppSettings: Preserving old <Phrases> root content.");
+                                oldPhrases = new XElement(appDataRoot);
                             }
                             appDataRoot = new XElement("AppData");
                             doc = new XDocument(appDataRoot);
+                            if (oldPhrases != null)
+                            {
+                                appDataRoot.Add(oldPhrases);
+                            }
                         }
                     }
-                    catch
+                    catch (Exception ex) // Catch issues like corrupted XML
                     {
+                        System.Diagnostics.Debug.WriteLine($"MainViewModel.SaveAppSettings: Exception loading existing XML: {ex.Message}. Creating new document structure.");
                         appDataRoot = new XElement("AppData");
                         doc = new XDocument(appDataRoot);
+                        if (phrasesElementToPreserve != null)
+                        {
+                            System.Diagnostics.Debug.WriteLine("MainViewModel.SaveAppSettings (Exception Handler): Adding provided phrasesElementToPreserve to new AppData root.");
+                            appDataRoot.Add(phrasesElementToPreserve);
+                        }
                     }
                 }
                 else
                 {
+                    System.Diagnostics.Debug.WriteLine($"MainViewModel.SaveAppSettings: {_filePath} does not exist. Creating new document structure.");
                     appDataRoot = new XElement("AppData");
                     doc = new XDocument(appDataRoot);
+                    if (phrasesElementToPreserve != null)
+                    {
+                         System.Diagnostics.Debug.WriteLine("MainViewModel.SaveAppSettings (File Not Exist): Adding provided phrasesElementToPreserve to new AppData root.");
+                         appDataRoot.Add(phrasesElementToPreserve);
+                    }
+                }
+
+                XElement phrasesCurrent = appDataRoot.Element("Phrases");
+                if (phrasesCurrent == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("MainViewModel.SaveAppSettings: <Phrases> element not found. Creating one.");
+                    if (phrasesElementToPreserve != null && phrasesElementToPreserve.Name == "Phrases")
+                    {
+                         // This case should have been handled by adding phrasesElementToPreserve to appDataRoot already.
+                         // If appDataRoot.Add(phrasesElementToPreserve) was called and phrasesElementToPreserve was <Phrases>, this path shouldn't be hit often.
+                         // However, if phrasesElementToPreserve was something else, or if it was null, we need a <Phrases> element.
+                         if (appDataRoot.Element("Phrases") == null) // Double check
+                         {
+                            System.Diagnostics.Debug.WriteLine("MainViewModel.SaveAppSettings: Adding passed phrasesElementToPreserve as the <Phrases> element.");
+                            appDataRoot.Add(new XElement(phrasesElementToPreserve)); // Ensure it's a new XElement if it came from another doc
+                         }
+                         phrasesCurrent = appDataRoot.Element("Phrases");
+                    }
+
+                    if (phrasesCurrent == null) // If still null (e.g. phrasesElementToPreserve was not <Phrases> or was null)
+                    {
+                        System.Diagnostics.Debug.WriteLine("MainViewModel.SaveAppSettings: Adding new empty <Phrases> element.");
+                        phrasesCurrent = new XElement("Phrases");
+                        appDataRoot.Add(phrasesCurrent);
+                    }
                 }
 
                 XElement settingsElement = appDataRoot.Element("Settings");
                 if (settingsElement == null)
                 {
                     settingsElement = new XElement("Settings");
-                    appDataRoot.Add(settingsElement);
+                    // appDataRoot.Add(settingsElement); // Will be added later in order
                 }
-
                 settingsElement.SetElementValue("MainWindowBackgroundColor", _mainWindowBackgroundColor);
                 settingsElement.SetElementValue("MainWindowOpacity", _mainWindowOpacity.ToString(CultureInfo.InvariantCulture));
                 settingsElement.SetElementValue("FontSize", _fontSize.ToString(CultureInfo.InvariantCulture));
                 settingsElement.SetElementValue("SliderValue", _sliderValue.ToString(CultureInfo.InvariantCulture));
 
-                if (appDataRoot.Element("Phrases") == null)
+                System.Diagnostics.Debug.WriteLine("MainViewModel.SaveAppSettings: Ensuring Settings element exists and updating values.");
+                XElement settingsElement = appDataRoot.Element("Settings");
+                if (settingsElement == null)
                 {
-                    if (existingPhrasesElementToPreserve != null)
-                    {
-                        appDataRoot.Add(existingPhrasesElementToPreserve);
-                    }
-                    else
-                    {
-                        appDataRoot.Add(new XElement("Phrases")); // Add empty <Phrases> if none existed
-                    }
+                    settingsElement = new XElement("Settings");
                 }
+                settingsElement.SetElementValue("MainWindowBackgroundColor", _mainWindowBackgroundColor);
+                settingsElement.SetElementValue("MainWindowOpacity", _mainWindowOpacity.ToString(CultureInfo.InvariantCulture));
+                settingsElement.SetElementValue("FontSize", _fontSize.ToString(CultureInfo.InvariantCulture));
+                settingsElement.SetElementValue("SliderValue", _sliderValue.ToString(CultureInfo.InvariantCulture));
 
-                var phrasesCurrent = appDataRoot.Element("Phrases");
-                var settingsCurrent = appDataRoot.Element("Settings");
+                System.Diagnostics.Debug.WriteLine("MainViewModel.SaveAppSettings: Enforcing <Phrases> then <Settings> order.");
+                phrasesCurrent.Remove();
+                XElement currentSettingsIfAny = appDataRoot.Element("Settings"); // Re-fetch in case it was just created by SetElementValue on a detached element
+                if(currentSettingsIfAny != null) currentSettingsIfAny.Remove();
 
-                // Ensure order: Phrases first, then Settings
-                if (phrasesCurrent != null) phrasesCurrent.Remove();
-                if (settingsCurrent != null) settingsCurrent.Remove();
-
-                if (phrasesCurrent != null) appDataRoot.Add(phrasesCurrent);
-                else if (existingPhrasesElementToPreserve != null) appDataRoot.Add(existingPhrasesElementToPreserve); // Re-add if it was the only thing
-                else appDataRoot.Add(new XElement("Phrases")); // Ensure Phrases element exists
-
-                if (settingsCurrent != null) appDataRoot.Add(settingsCurrent); // Re-add settings
-                else appDataRoot.Add(new XElement("Settings", // Or create if it didn't exist but should
-                    new XElement("MainWindowBackgroundColor", _mainWindowBackgroundColor),
-                    new XElement("MainWindowOpacity", _mainWindowOpacity.ToString(CultureInfo.InvariantCulture)),
-                    new XElement("FontSize", _fontSize.ToString(CultureInfo.InvariantCulture)),
-                    new XElement("SliderValue", _sliderValue.ToString(CultureInfo.InvariantCulture))
-                ));
+                appDataRoot.Add(phrasesCurrent);
+                appDataRoot.Add(settingsElement);
 
                 doc.Save(_filePath);
+                System.Diagnostics.Debug.WriteLine($"MainViewModel.SaveAppSettings: Settings saved to {_filePath}.");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error saving settings: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"MainViewModel.SaveAppSettings: Exception: {ex.Message}");
             }
+            System.Diagnostics.Debug.WriteLine("MainViewModel.SaveAppSettings: Finished.");
         }
 
         private void UpdateTimerInterval()

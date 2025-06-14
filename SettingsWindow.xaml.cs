@@ -47,6 +47,7 @@ namespace NeuroIFACE
         }
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
+            System.Diagnostics.Debug.WriteLine("SettingsWindow.CloseButton_Click: Closing Settings window.");
             this.Close(); // Закрытие окна
         }
 
@@ -159,6 +160,7 @@ namespace NeuroIFACE
 
         private void AddPhrase_Click(object sender, RoutedEventArgs e)
         {
+            System.Diagnostics.Debug.WriteLine($"SettingsWindow.AddPhrase_Click: Adding phrase Ru='{russianPhrase}', En='{englishPhrase}'");
             string russianPhrase = RussianTextBox.Text;
             string englishPhrase = EnglishTextBox.Text;
 
@@ -177,11 +179,71 @@ namespace NeuroIFACE
 
         private void AddPhraseToXml(string russian, string english)
         {
-            XDocument doc = XDocument.Load("Data.xml");
-            doc.Root.Add(new XElement("Translete",
+            System.Diagnostics.Debug.WriteLine($"SettingsWindow.AddPhraseToXml: Adding Ru='{russian}', En='{english}' to Data.xml");
+            XDocument doc;
+            XElement appDataElement;
+            XElement phrasesElement;
+            string filePath = "Data.xml";
+
+            if (System.IO.File.Exists(filePath))
+            {
+                doc = XDocument.Load(filePath);
+                appDataElement = doc.Root;
+                // Ensure root is AppData
+                if (appDataElement == null || appDataElement.Name != "AppData")
+                {
+                    // If root is not AppData (e.g. old format or empty file), create new structure
+                    // For simplicity, we'll recreate and try to preserve old phrases if they were at root
+                    XElement oldPhrases = null;
+                    if (appDataElement != null && appDataElement.Name == "Phrases")
+                    {
+                        oldPhrases = new XElement(appDataElement); // clone old root if it was Phrases
+                    }
+                    appDataElement = new XElement("AppData");
+                    doc = new XDocument(appDataElement);
+                    if (oldPhrases != null)
+                    {
+                        appDataElement.Add(oldPhrases); // Add old phrases under new AppData
+                        phrasesElement = appDataElement.Element("Phrases");
+                    }
+                }
+            }
+            else
+            {
+                // File does not exist, create new structure
+                appDataElement = new XElement("AppData");
+                doc = new XDocument(appDataElement);
+            }
+
+            phrasesElement = appDataElement.Element("Phrases");
+            if (phrasesElement == null)
+            {
+                phrasesElement = new XElement("Phrases");
+                appDataElement.Add(phrasesElement);
+            }
+
+            phrasesElement.Add(new XElement("Translete",
                 new XElement("Ru", russian),
                 new XElement("En", english)));
-            doc.Save("Data.xml");
+
+            // Ensure Settings element exists if it's not already there, to maintain consistency with MainViewModel's save logic
+            if (appDataElement.Element("Settings") == null)
+            {
+                appDataElement.Add(new XElement("Settings"));
+            }
+
+            // Ensure order: Phrases first, then Settings
+            var currentPhrases = appDataElement.Element("Phrases");
+            var currentSettings = appDataElement.Element("Settings");
+
+            if (currentPhrases != null) currentPhrases.Remove();
+            if (currentSettings != null) currentSettings.Remove();
+
+            if (currentPhrases != null) appDataElement.Add(currentPhrases);
+            if (currentSettings != null) appDataElement.Add(currentSettings);
+
+
+            doc.Save(filePath);
         }
 
         private void RgbSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -200,6 +262,21 @@ namespace NeuroIFACE
 
             string hexColor = $"#FF{r:X2}{g:X2}{b:X2}";
             _viewModel.MainWindowBackgroundColor = hexColor;
+        }
+
+        private void ManagePhrasesButton_Click(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Debug.WriteLine("SettingsWindow.ManagePhrasesButton_Click: Opening PhraseManagerWindow.");
+            PhraseManagerWindow phraseManagerWindow = new PhraseManagerWindow();
+            phraseManagerWindow.Owner = this; // Optional: to make it behave more like a child of this window
+            phraseManagerWindow.ShowDialog();
+            System.Diagnostics.Debug.WriteLine("SettingsWindow.ManagePhrasesButton_Click: PhraseManagerWindow closed.");
+            // After PhraseManagerWindow is closed, you might want to refresh things
+            // in SettingsWindow or MainViewModel if changes in PhraseManagerWindow
+            // could affect them. For now, RandomPhraseModel will pick up changes
+            // from Data.xml upon next phrase generation or app restart.
+            // If MainViewModel's RandomPhraseModel instance needs to be refreshed immediately,
+            // that would require more direct communication or eventing.
         }
 
         private void UpdateSlidersFromViewModelColor()

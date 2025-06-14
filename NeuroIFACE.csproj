@@ -8,4 +8,8 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="EPPlus" Version="7.0.0" /> <!-- Or a recent stable version -->
+  </ItemGroup>
+
 </Project>

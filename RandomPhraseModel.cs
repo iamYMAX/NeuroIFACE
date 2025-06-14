@@ -97,7 +97,14 @@ namespace NeuroIFACE
 
         public string GetRandomPhrase()
         {
+            if (_phrases == null || _phrases.Count == 0)
+            {
+                System.Diagnostics.Debug.WriteLine("RandomPhraseModel.GetRandomPhrase: No phrases available, returning default message.");
+                return "No phrases available"; // Or string.Empty or another suitable placeholder
+            }
             var random = new Random();
+            // It's good practice to create Random instance once and reuse, but for this specific method,
+            // if called infrequently, it might be acceptable. If called frequently, consider making 'random' a class field.
             var randomPhrase = _phrases[random.Next(_phrases.Count)];
             return $"{randomPhrase.Item1} - {randomPhrase.Item2}";
         }
